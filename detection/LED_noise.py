@@ -13,7 +13,7 @@ from picamera import PiCamera
 import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
 from fractions import Fraction
-
+import csv
 
 def integral(x1, x2, y1, y2, table):
     return table[y1][x1][0] + table[y2][x2][0] - table[y1][x2][0] - table[y2][x1][0]
@@ -52,16 +52,16 @@ key = cv2.waitKey(0) & 0xFF
 camera.awb_mode = 'off'
 camera.awb_gains = (Fraction(5,4), Fraction(4,3))
 #camera.shutter_speed = 32000 #for darker environments
-camera.shutter_speed = 3200 #light testing
+camera.shutter_speed = 3200*3 #light testing
 
 #pwm = GPIO.PWM(18, 100)
 #pwm.start(1)
-redLower = np.array((0,50, 50))
+redLower = np.array((0,50, 150))
 redUpper = np.array((330, 255,255))
 
 def brightnessvalue(frame, redLower, redUpper):
     #Avisha: ball tracking
-    print('block test 2')
+    #print('block test 2')
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     h, s, v = cv2.split(hsv)
     #cv2.imshow('gr', frame)
@@ -83,18 +83,20 @@ def brightnessvalue(frame, redLower, redUpper):
     integral_table = cv2.integral(frame) 
     image_y = int(frame.shape[0])
     image_x = int(frame.shape[1])
-    cv2.imshow('gr', frame)
-    key = cv2.waitKey(0) & 0xFF
+    #cv2.imshow('gr', frame)
+    #key = cv2.waitKey(0) & 0xFF
         #only proceed if at least one contour was found 
     if len (cnts) > 0:
                     #find largest contour, use it to compute min enclosed cirlce
                     #and centroid 
         c = max(cnts, key=cv2.contourArea)
         ((x, y), radius) = cv2.minEnclosingCircle(c)
-        print(max(0, x -radius), min(image_x-1, x + radius), max(0, y - radius), min(image_y-1, y + radius))
-        img_integral = integral(max(0, x -radius), min(image_x-1, x + radius), max(0, y - radius), min(image_y-1, y + radius), integral_table)
+        bounds = max(0, x -radius), min(image_x-1, x + radius), max(0, y - radius), min(image_y-1, y + radius)
+        #print(bounds)
+        img_integral = integral(bounds[0], bounds[1], bounds[2], bounds[3], integral_table)
         #img_integral = integral(0, image_x, 0, image_y, integral_table)
-        print(img_integral)
+        area = (bounds[1] - bounds[0]) * (bounds[3] - bounds[2])
+        #print(img_integral/area)
         M = cv2.moments(c)
         center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
         #proceed if radius is min size --NEED TO FIGURE OUT
@@ -104,7 +106,7 @@ def brightnessvalue(frame, redLower, redUpper):
         #    cv2.circle(frame, (int(x), int(y)), int(radius), 
         #                            (0, 255, 255), 2)
         #    cv2.circle(frame, center, 5, (0, 0, 255), -1)
-        return img_integral
+        return img_integral/area
     # show the frame to our screen
     
 
@@ -114,16 +116,19 @@ def brightnessvalue(frame, redLower, redUpper):
     #gray = frame
     return 0
 
-
+csvfile = open('LED.csv', 'wb')
 try:
 #make function which takes in frame, lower and uppper bound for hue saturation value, return integral 
-
+    fieldnames = ['emission1', 'emission2', 'time']
+    
+    csvwriter  = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    csvwriter.writeheader()
     while True:
-        response = raw_input("ledsample")
-        if response == "q":
-            break
+        #response = raw_input("ledsample")
+        #if response == "q":
+        #    break
        
-        print('block test 1')
+        #print('block test 1')
         #low excitation
         GPIO.output( excite_low_pin, GPIO.HIGH)
         time.sleep(0.1)
@@ -146,10 +151,12 @@ try:
         else:
             ratio = -1
 
-        data = {"name": response, "low_emission": x, "high_emission": y, "comments": ""}
-        url = 'http://citronnade.mooo.com/rfp'
+        data = {"emission1": x, "emission2": y, "time": time.ctime()}
+        csvwriter.writerow(data)
+        csvfile.flush()
+        #url = 'http://citronnade.mooo.com/rfp'
         print(data)
-        requests.post(url, data=data)
+       # requests.post(url, data=data)
         
 
               
@@ -161,4 +168,4 @@ finally:
     camera.close()
     #pwm.stop()
     GPIO.cleanup()
-
+    csvfile.close()

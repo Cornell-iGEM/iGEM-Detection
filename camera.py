@@ -125,10 +125,10 @@ for video_frame in camera.capture_continuous(raw_capture, format="bgr", use_vide
         #jpeg_im = content.read()
         files = {'media': content}
         brightness = {"brightness": quadrant_intensity[quadrant_no-1][0] * 100/255}
-        #url = 'http://10.42.0.1:5000/upload'
-        #url2 = 'http://10.42.0.1:5000/brightness'
-        url = 'http://citronnade.mooo.com/upload'
-        url2 = 'http://citronnade.mooo.com/brightness'
+        url = 'http://10.42.0.1:5000/upload_data'
+        url2 = 'http://10.42.0.1:5000/brightness'
+        #url = 'http://citronnade.mooo.com/upload'
+        #url2 = 'http://citronnade.mooo.com/brightness'
         requests.post(url, files=files)
         requests.post(url2, data=brightness)
         

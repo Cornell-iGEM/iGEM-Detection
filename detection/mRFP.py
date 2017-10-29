@@ -130,7 +130,7 @@ def brightnessvalue(frame, redLower, redUpper):
     #gray = frame
     return -1, -1
 
-csvfile = open('intensities-mixed.csv', 'wb')
+csvfile = open('baseline-42.csv', 'wb')
 try:
 #make function which takes in frame, lower and uppper bound for hue saturation value, return integral 
     fieldnames = ['emission1', 'x1', 'x2', 'y1', 'y2', 'dutycycle', 'area', 'time']
@@ -139,9 +139,9 @@ try:
     csvwriter.writeheader()
     count = 0
     while True:
-        for dc in (20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 33, 50, 67, 75, 100):
-            count +=1
-        #for dc in (42,):
+        #for dc in (20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 33, 50, 67, 75, 100):
+        count +=1
+        for dc in (42,):
         #response = raw_input("ledsample")
         #if response == "q":
             #    break
@@ -155,8 +155,8 @@ try:
 
             camera.capture(raw_capture, format='bgr')
             frame = raw_capture.array     
-            if count % 203 == 0:
-                cv2.imwrite(str(ctime()) +"-"+ str(count) + "-" + str(dc)+"-raw", frame)
+            #if count % 203 == 0:
+                #cv2.imwrite(str(time.ctime()) +"-"+ str(count) + "-" + str(dc)+"-raw", frame)
             results1 = brightnessvalue(frame, redLower, redUpper)
             x = results1[0]
 
